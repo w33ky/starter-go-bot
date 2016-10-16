@@ -2,6 +2,12 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/BeepBoopHQ/go-slackbot",
+			"repository": "https://github.com/BeepBoopHQ/go-slackbot",
+			"revision": "58027c0d5238a0604305652ea526b3c18a7cead1",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/chris-skud/go-wit",
 			"repository": "https://github.com/chris-skud/go-wit",
 			"revision": "c5c44784af9f70ebeb2b5008fbdfab346ec0acaf",
@@ -24,6 +30,13 @@
 			"repository": "https://github.com/nlopes/slack",
 			"revision": "a1a63712460a18dbe828ae915f954a0f214f3d8e",
 			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "8b4af36cd21a1f85a7484b49feb7c79363106d8e",
+			"branch": "master",
+			"path": "/context"
 		},
 		{
 			"importpath": "golang.org/x/net/websocket",
