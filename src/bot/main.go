@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 	"net"
+	"strings"
 
 	slackbot "github.com/BeepBoopHQ/go-slackbot"
 	"github.com/nlopes/slack"
@@ -45,19 +46,21 @@ func main() {
 	bot.Run()
 }
 
-func AddressHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
-
-	host, _ := os.Hostname()
-	addrs, _ := net.LookupIP(host)
-
-	for _, addr := range addrs{
-		if ipv4 := addr.To4(); ipv4 != nil {
-			fmt.Println("IPv4: ", ipv4)
-			bot.Reply(evt, ipv4.String(), WithTyping)
+func GetOutboundIP() string {
+    conn, err := net.Dial("udp", "8.8.8.8:80")
+    if err != nil {
+				fmt.Println(err)
 		}
-	}
-	bot.Reply(evt, host, WithTyping)
+    defer conn.Close()
 
+    localAddr := conn.LocalAddr().String()
+    idx := strings.LastIndex(localAddr, ":")
+
+    return localAddr[0:idx]
+}
+
+func AddressHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
+	bot.Reply(evt, GetOutboundIP(), WithTyping)
 }
 
 func HelloHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
