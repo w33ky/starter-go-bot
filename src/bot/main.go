@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"time"
+	"net"
 
 	slackbot "github.com/BeepBoopHQ/go-slackbot"
 	"github.com/nlopes/slack"
@@ -38,7 +39,24 @@ func main() {
 	bot.Hear("(bot ).*").MessageHandler(CatchAllHandler)
 	bot.Hear(":wink:").MessageHandler(WinkHandler)
 	bot.Hear(":smile:").MessageHandler(SmileHandler)
+	bot.Hear("getAddress").MessageHandler(AddressHandler)
 	bot.Run()
+}
+
+func AddressHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
+	// msg := fmt.Sprintf("░░░░██░░████████░░██░░░░░░░░░░░░░░░░░░░░░░░░░░\n░░██░░██░░░░░░░░██░░██░░░░░░░░░░░░░░░░░░░░░░░░\n░░██░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░░░\n░░██░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░\n██░░░░██░░░░██░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░\n██░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░\n██░░░░░░████░░░░░░░░░░░░░░░░░░██████████████░░\n██░░██░░██░░░░██░░░░░░░░░░░░░░░░░░░░░░░░░░░░██\n██░░░░████████░░░░░░░░░░░░░░░░░░░░░░░░██████░░\n██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░\n░░██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░\n░░██░░░░████░░░░████████░░░░████░░░░██░░░░░░░░\n░░██░░░░████░░██░░░░░░██░░██░░██░░░░██░░░░░░░░\n░░██░░██░░░░██░░░░░░░░░░██░░░░██░░██░░░░░░░░░░\n░░░░██░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░")
+
+	host, _ := os.Hostname()
+	addrs, _ := net.LookupIP(host)
+
+	for _, addr := range addrs{
+		if ipv4 := addr.To4(); ipv4 != nil {
+			fmt.Println("IPv4: ", ipv4)
+			bot.Reply(evt, ipv4.String(), WithTyping)
+		}
+	}
+	bot.Reply(evt, host, WithTyping)
+
 }
 
 func HelloHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
