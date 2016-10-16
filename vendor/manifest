@@ -19,6 +19,18 @@
 			"revision": "1b27761f1cd4840a914b5255e4357385091562e5",
 			"branch": "master",
 			"path": "/websocket"
+		},
+		{
+			"importpath": "github.com/gorilla/context",
+			"repository": "https://github.com/gorilla/context",
+			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/gorilla/mux",
+			"repository": "https://github.com/gorilla/mux",
+			"revision": "757bef944d0f21880861c2dd9c871ca543023cba",
+			"branch": "master"
 		}
 	]
 }
