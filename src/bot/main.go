@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"time"
 	"net"
+	"os"
 	"strings"
+	"time"
 
 	"log"
 	"net/http"
@@ -35,7 +35,6 @@ var bot *slackbot.Bot
 
 func main() {
 
-
 	bot = slackbot.New(os.Getenv("SLACK_TOKEN"))
 	toMe := bot.Messages(slackbot.DirectMessage, slackbot.DirectMention).Subrouter()
 
@@ -53,104 +52,103 @@ func main() {
 
 	router := NewRouter(bot)
 	http.Handle("/", router)
-	errHTTP :=  http.ListenAndServe(":8080", nil)
+	errHTTP := http.ListenAndServe(":8080", nil)
 	if errHTTP != nil {
 		panic("Error: " + errHTTP.Error())
 	}
 
 }
 
-
 type Route struct {
-    Name        string
-    Method      string
-    Pattern     string
-    HandlerFunc http.HandlerFunc
+	Name        string
+	Method      string
+	Pattern     string
+	HandlerFunc http.HandlerFunc
 }
 
 type Routes []Route
 
 func NewRouter(bot *slackbot.Bot) *mux.Router {
-    router := mux.NewRouter().StrictSlash(false)
-    for _, route := range routes {
+	router := mux.NewRouter().StrictSlash(false)
+	for _, route := range routes {
 
-        var handler http.Handler
-        handler = route.HandlerFunc
-				handler = Logger(handler, route.Name)
-				handler = Botter(handler, bot)
+		var handler http.Handler
+		handler = route.HandlerFunc
+		handler = Logger(handler, route.Name)
+		handler = Botter(handler, bot)
 
-        router.
-            Methods(route.Method).
-            Path(route.Pattern).
-            Name(route.Name).
-            Handler(handler)
-    }
-    return router
+		router.
+			Methods(route.Method).
+			Path(route.Pattern).
+			Name(route.Name).
+			Handler(handler)
+	}
+	return router
 }
 
 var routes = Routes{
-  Route{
-      "get",
-      "GET",
-      "/get",
-      emptyHandler_func,
-  },
 	Route{
-      "get2",
-      "GET",
-      "/ge",
-      emptyHandler_func,
-  },
+		"get",
+		"GET",
+		"/get",
+		emptyHandler_func,
+	},
+	Route{
+		"get2",
+		"GET",
+		"/ge",
+		emptyHandler_func,
+	},
 }
 
-func emptyHandler_func(rw http.ResponseWriter, req *http.Request){
+func emptyHandler_func(rw http.ResponseWriter, req *http.Request) {
 	log.Printf("emptyHandler_func")
 }
 
 func Botter(inner http.Handler, bot *slackbot.Bot) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-        inner.ServeHTTP(w, r)
-				if(r.RequestURI == "/get"){
-					bot.RTM.NewOutgoingMessage("Hello","@ascii-art-bot")
-				}else{
-					log.Printf("noooo",)
-				}
+		inner.ServeHTTP(w, r)
+		if r.RequestURI == "/get" {
+			bot.RTM.NewOutgoingMessage("Hello", "#ascii-art-channel")
+		} else {
+			log.Printf("noooo")
+		}
 
-    })
+	})
 }
 
 func Logger(inner http.Handler, name string) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        start := time.Now()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 
-        inner.ServeHTTP(w, r)
+		inner.ServeHTTP(w, r)
 
-        log.Printf(
-            "%s\t%s\t%s\t%s",
-            r.Method,
-            r.RequestURI,
-            name,
-            time.Since(start),
-        )
-    })
+		log.Printf(
+			"%s\t%s\t%s\t%s",
+			r.Method,
+			r.RequestURI,
+			name,
+			time.Since(start),
+		)
+	})
 }
 
 func GetOutboundIP() string {
-    conn, err := net.Dial("udp", "8.8.8.8:80")
-    if err != nil {
-				fmt.Println(err)
-		}
-    defer conn.Close()
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer conn.Close()
 
-    localAddr := conn.LocalAddr().String()
-    idx := strings.LastIndex(localAddr, ":")
+	localAddr := conn.LocalAddr().String()
+	idx := strings.LastIndex(localAddr, ":")
 
-    return localAddr[0:idx]
+	return localAddr[0:idx]
 }
 
 func AddressHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
-	log.Printf("%s",evt,)
+	fmt.Println(evt)
 	bot.Reply(evt, GetOutboundIP(), WithTyping)
 	bot.Reply(evt, "https://beepboophq.com/proxy/7024263b0799480bb2ebba99a059beac", WithTyping)
 }
@@ -169,47 +167,47 @@ func HelloHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEven
 }
 
 func WinkHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
-	msg := fmt.Sprintf("░░░░██░░████████░░██░░░░░░░░░░░░░░░░░░░░░░░░░░\n"+
-										 "░░██░░██░░░░░░░░██░░██░░░░░░░░░░░░░░░░░░░░░░░░\n"+
-										 "░░██░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░░░\n"+
-										 "░░██░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░\n"+
-										 "██░░░░██░░░░██░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░\n"+
-										 "██░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░\n"+
-										 "██░░░░░░████░░░░░░░░░░░░░░░░░░██████████████░░\n"+
-										 "██░░██░░██░░░░██░░░░░░░░░░░░░░░░░░░░░░░░░░░░██\n"+
-										 "██░░░░████████░░░░░░░░░░░░░░░░░░░░░░░░██████░░\n"+
-										 "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n"+
-										 "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n"+
-										 "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n"+
-										 "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n"+
-										 "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░\n"+
-										 "░░██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░\n"+
-										 "░░██░░░░████░░░░████████░░░░████░░░░██░░░░░░░░\n"+
-										 "░░██░░░░████░░██░░░░░░██░░██░░██░░░░██░░░░░░░░\n"+
-										 "░░██░░██░░░░██░░░░░░░░░░██░░░░██░░██░░░░░░░░░░\n"+
-										 "░░░░██░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░")
+	msg := fmt.Sprintf("░░░░██░░████████░░██░░░░░░░░░░░░░░░░░░░░░░░░░░\n" +
+		"░░██░░██░░░░░░░░██░░██░░░░░░░░░░░░░░░░░░░░░░░░\n" +
+		"░░██░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░░░\n" +
+		"░░██░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░\n" +
+		"██░░░░██░░░░██░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░\n" +
+		"██░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░\n" +
+		"██░░░░░░████░░░░░░░░░░░░░░░░░░██████████████░░\n" +
+		"██░░██░░██░░░░██░░░░░░░░░░░░░░░░░░░░░░░░░░░░██\n" +
+		"██░░░░████████░░░░░░░░░░░░░░░░░░░░░░░░██████░░\n" +
+		"██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n" +
+		"██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n" +
+		"██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n" +
+		"██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░\n" +
+		"██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░\n" +
+		"░░██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░\n" +
+		"░░██░░░░████░░░░████████░░░░████░░░░██░░░░░░░░\n" +
+		"░░██░░░░████░░██░░░░░░██░░██░░██░░░░██░░░░░░░░\n" +
+		"░░██░░██░░░░██░░░░░░░░░░██░░░░██░░██░░░░░░░░░░\n" +
+		"░░░░██░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░")
 	bot.Reply(evt, msg, WithTyping)
 }
 
 func SmileHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
-	msg := fmt.Sprintf("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&,░░░░░░░░░\n"+
-										" ░░░░░░,MMM8&&&.░░░░░░░░░░░░░░░░░░░░░░░░░░`'MMM88&&&,░░░░░\n"+
-										" ░░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&,░░░░░\n"+
-										" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&,░░░░\n"+
-										" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&░░░\n"+
-										" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&░░░\n"+
-										" ░░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ MMM88&&&░░\n"+
-										" ░░░░░░'MMM8&&&'░░░░░░░░░░░░MMMM888&&&&░░░░░░░░░░'MM88&&&░\n"+
-										" ░░░░░░░░░░░░░░░░░░░░░░░░░░MMMM88&&&&&░░░░░░░░░░MM88&&&░░░\n"+
-										" ░░░░░░░░░░░░░░░░░░░░░░░░░░MMMM88&&&&&░░░░░░░░░░MM88&&&░░░\n"+
-										" ░░░░░░,MMM8&&&.░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MM88&&&░░\n"+
-										" ░░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░,MM88&&&░░░\n"+
-										" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░\n"+
-										" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░\n"+
-										" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░░\n"+
-										" ░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░░░\n"+
-										" ░░░░░'MMM8&&&'░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░░░\n"+
-										" ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&░░░░░░░'\n")
+	msg := fmt.Sprintf("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&,░░░░░░░░░\n" +
+		" ░░░░░░,MMM8&&&.░░░░░░░░░░░░░░░░░░░░░░░░░░`'MMM88&&&,░░░░░\n" +
+		" ░░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&,░░░░░\n" +
+		" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&,░░░░\n" +
+		" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&░░░\n" +
+		" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░'MMM88&&&░░░\n" +
+		" ░░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ MMM88&&&░░\n" +
+		" ░░░░░░'MMM8&&&'░░░░░░░░░░░░MMMM888&&&&░░░░░░░░░░'MM88&&&░\n" +
+		" ░░░░░░░░░░░░░░░░░░░░░░░░░░MMMM88&&&&&░░░░░░░░░░MM88&&&░░░\n" +
+		" ░░░░░░░░░░░░░░░░░░░░░░░░░░MMMM88&&&&&░░░░░░░░░░MM88&&&░░░\n" +
+		" ░░░░░░,MMM8&&&.░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MM88&&&░░\n" +
+		" ░░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░,MM88&&&░░░\n" +
+		" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░\n" +
+		" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░\n" +
+		" ░░░░MMMMM88&&&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░░\n" +
+		" ░░░░MMMMM88&&&&░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░░░\n" +
+		" ░░░░░'MMM8&&&'░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&'░░░░\n" +
+		" ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░MMM88&&&░░░░░░░'\n")
 	bot.Reply(evt, msg, WithTyping)
 }
 
