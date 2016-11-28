@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net"
@@ -8,11 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"log"
 	"net/http"
 
 	slackbot "github.com/BeepBoopHQ/go-slackbot"
-	"github.com/gorilla/mux"
 	"github.com/nlopes/slack"
 	"golang.org/x/net/context"
 )
@@ -32,6 +33,7 @@ const (
 
 var greetingPrefixes = []string{"Hi", "Hello", "Howdy", "Wazzzup", "Hey"}
 var bot *slackbot.Bot
+var client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 func main() {
 
@@ -48,6 +50,7 @@ func main() {
 	bot.Hear(":wink:").MessageHandler(WinkHandler)
 	bot.Hear(":smile:").MessageHandler(SmileHandler)
 	bot.Hear("getAddress").MessageHandler(AddressHandler)
+	bot.Hear("!").MessageHandler(JokeHandler)
 	go bot.Run()
 
 	router := NewRouter(bot)
@@ -57,81 +60,6 @@ func main() {
 		panic("Error: " + errHTTP.Error())
 	}
 
-}
-
-type Route struct {
-	Name        string
-	Method      string
-	Pattern     string
-	HandlerFunc http.HandlerFunc
-}
-
-type Routes []Route
-
-func NewRouter(bot *slackbot.Bot) *mux.Router {
-	router := mux.NewRouter().StrictSlash(false)
-	for _, route := range routes {
-
-		var handler http.Handler
-		handler = route.HandlerFunc
-		handler = Logger(handler, route.Name)
-		handler = Botter(handler, bot)
-
-		router.
-			Methods(route.Method).
-			Path(route.Pattern).
-			Name(route.Name).
-			Handler(handler)
-	}
-	return router
-}
-
-var routes = Routes{
-	Route{
-		"get",
-		"GET",
-		"/get",
-		emptyHandler_func,
-	},
-	Route{
-		"get2",
-		"GET",
-		"/ge",
-		emptyHandler_func,
-	},
-}
-
-func emptyHandler_func(rw http.ResponseWriter, req *http.Request) {
-	log.Printf("emptyHandler_func")
-}
-
-func Botter(inner http.Handler, bot *slackbot.Bot) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		inner.ServeHTTP(w, r)
-		if r.RequestURI == "/get" {
-			bot.RTM.NewOutgoingMessage("Hello", "#ascii-art-channel")
-		} else {
-			log.Printf("noooo")
-		}
-
-	})
-}
-
-func Logger(inner http.Handler, name string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		inner.ServeHTTP(w, r)
-
-		log.Printf(
-			"%s\t%s\t%s\t%s",
-			r.Method,
-			r.RequestURI,
-			name,
-			time.Since(start),
-		)
-	})
 }
 
 func GetOutboundIP() string {
@@ -145,6 +73,29 @@ func GetOutboundIP() string {
 	idx := strings.LastIndex(localAddr, ":")
 
 	return localAddr[0:idx]
+}
+
+func JokeHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
+	req, err := http.NewRequest("GET", "http://api.icndb.com/jokes/random", nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp, err2 := client.Do(req)
+	if err2 != nil {
+		fmt.Println(err2)
+	} else {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(resp.Body)
+		data := buf.Bytes()
+		var requestContent map[string]interface{}
+		err := json.Unmarshal(data, &requestContent)
+		if err != nil {
+			fmt.Println(err)
+		}
+		jokeSlice := requestContent["value"].(map[string]interface{})
+		joke := jokeSlice["joke"].(string)
+		bot.Reply(evt, joke, WithoutTyping)
+	}
 }
 
 func AddressHandler(ctx context.Context, bot *slackbot.Bot, evt *slack.MessageEvent) {
