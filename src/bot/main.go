@@ -50,7 +50,7 @@ func main() {
 	bot.Hear(":wink:").MessageHandler(WinkHandler)
 	bot.Hear(":smile:").MessageHandler(SmileHandler)
 	bot.Hear("getAddress").MessageHandler(AddressHandler)
-	bot.Hear("!").MessageHandler(JokeHandler)
+	bot.Hear("CO²").MessageHandler(JokeHandler)
 	go bot.Run()
 
 	router := NewRouter(bot)
